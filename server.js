@@ -9,6 +9,7 @@ var { Parser } = require('json2csv')
 var request = require('request');
 const { text } = require("stream/consumers");
 var https = require('follow-redirects').https;
+let port = process.env.PORT || 9000
 var parsedData = [{ _0: 153887, _2: 'https://scoopcoupons.com/store/55peaks-coupons/', _3: "https://t.co/bpxm8PiWd6" }];
 var filePath = "https://scoopcoupons.com/sam.csv";
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
@@ -24,7 +25,7 @@ app.get('/', async function (req, res) {
 })
 
 
-app.listen(9000);
+app.listen(port);
 
 async function parseCSVFile(filePath, res,req) {
 
