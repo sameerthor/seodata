@@ -8,6 +8,7 @@ var http = require('follow-redirects').http;
 var { Parser } = require('json2csv')
 var request = require('request');
 const { text } = require("stream/consumers");
+var timeout = require('connect-timeout')
 var https = require('follow-redirects').https;
 let port = process.env.PORT || 9000
 var parsedData = [{ _0: 153887, _2: 'https://scoopcoupons.com/store/55peaks-coupons/', _3: "https://t.co/bpxm8PiWd6" }];
@@ -25,7 +26,13 @@ app.get('/', async function (req, res) {
 })
 
 
+app.use(timeout('25s'))
+app.use(haltOnTimedout)
 app.listen(port);
+
+function haltOnTimedout(req, res, next) {
+    if (!req.timedout) next()
+}
 
 async function parseCSVFile(filePath, res,req) {
 
