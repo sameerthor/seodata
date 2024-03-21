@@ -47,7 +47,7 @@ async function parseCSVFile(filePath, res,req) {
                      return false;
                  }
                  var offset = parseInt(req.query.offset)
- 
+                 console.log("offset",offset)
  
                  if (offset == 1) {
                      //   parsedData.splice(0, 2000)  
@@ -56,8 +56,9 @@ async function parseCSVFile(filePath, res,req) {
                      parsedData.splice(0, (offset - 1) * 100)
                      parsedData.splice(100, parsedData.length-1)  // Change this to get more store
                  }
-                 test(res, offset);
                  console.log(parsedData.length)
+                 test(res, offset);
+                
 
             })
             .on('error', function () {
