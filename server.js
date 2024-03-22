@@ -22,7 +22,7 @@ const ScrapClient = axios.create({
 });
 
 app.get('/', async function (req, res) {
-    await parseCSVFile(filePath, res,req)
+    await parseCSVFile(filePath, res, req)
 })
 
 
@@ -34,7 +34,7 @@ function haltOnTimedout(req, res, next) {
     if (!req.timedout) next()
 }
 
-async function parseCSVFile(filePath, res,req) {
+async function parseCSVFile(filePath, res, req) {
 
 
     await axios.get(filePath, { responseType: 'stream' }).then(function (response) {
@@ -43,29 +43,29 @@ async function parseCSVFile(filePath, res,req) {
 
         csvData.pipe(csvParser({ headers: true }))
             .on('data', function (data) {
-                   parsedData.push(data)
+                parsedData.push(data)
 
             })
             .on('end', function () {
-                 //  console.log("param",req.query)
-                 console.log('CSV data parsed');
-                 if (!req.query.offset) {
-                     res.status(200).send("Please give offset")
-                     return false;
-                 }
-                 var offset = parseInt(req.query.offset)
-                 console.log("offset",offset)
- 
-                 if (offset == 1) {
-                     //   parsedData.splice(0, 2000)  
-                     parsedData.splice(100, 173749)  // Change this to get more store
-                 } else {
-                     parsedData.splice(0, (offset - 1) * 100)
-                     parsedData.splice(100, parsedData.length-1)  // Change this to get more store
-                 }
-                 console.log(parsedData.length)
-                 test(res, offset);
-                
+                //  console.log("param",req.query)
+                console.log('CSV data parsed');
+                if (!req.query.offset) {
+                    res.status(200).send("Please give offset")
+                    return false;
+                }
+                var offset = parseInt(req.query.offset)
+                console.log("offset", offset)
+
+                if (offset == 1) {
+                    //   parsedData.splice(0, 2000)  
+                    parsedData.splice(100, 173749)  // Change this to get more store
+                } else {
+                    parsedData.splice(0, (offset - 1) * 100)
+                    parsedData.splice(100, parsedData.length - 1)  // Change this to get more store
+                }
+                console.log(parsedData.length)
+                test(res, offset);
+
 
             })
             .on('error', function () {
@@ -88,7 +88,7 @@ const isValidUrl = urlString => {
 
 
 
-function test(res,offset) {
+function test(res, offset) {
     var promise = parsedData.map(async (item, index) => {
         var url = item._3;
         //   console.log(index)
@@ -111,11 +111,11 @@ function test(res,offset) {
     })
     var fields_data = [];
     Promise.all(promise).then(function (values) {
-      //  console.log(values);
+        //  console.log(values);
         values.map((item1) => {
             if (item1) {
                 if (item1.status && (item1.title || item1.desc)) {
-                    fields_data.push({ store_id: item1.store._0, store_url: item1.store._2, store_aff_url: item1.store._3,site_url:item1.site_url ? item1.site_url:"",store_scrap_title: item1.title ? item1.title : "", store_scrap_desc: item1.desc ? item1.desc : "" })
+                    fields_data.push({ store_id: item1.store._0, store_url: item1.store._2, store_aff_url: item1.store._3, site_url: item1.site_url ? item1.site_url : "", store_scrap_title: item1.title ? item1.title : "", store_scrap_desc: item1.desc ? item1.desc : "" })
 
                 }
             }
@@ -137,7 +137,7 @@ function test(res,offset) {
 
         axios.request(config)
             .then((response) => {
-                res.status(200).send("File Uploaded- https://scoopcoupons.com/seos/store-"+offset+".csv")
+                res.status(200).send("File Uploaded- https://scoopcoupons.com/seos/store-" + offset + ".csv")
             })
             .catch((error) => {
                 res.status(200).send("Something went wrong.")
@@ -158,10 +158,10 @@ function checkWebsite(url, client, store) {
         //     url: url.href,
         //     httpsAgent: new https.Agent({ keepAlive: true,rejectUnauthorized: false }),
         // };
-       
+
         ScrapClient.get(url.href)
             .then((response) => {
-                
+
                 if (response.request.path == "/") {
                     var desc = "";
                     var title = "";
@@ -177,7 +177,7 @@ function checkWebsite(url, client, store) {
                         title = $('head > title').text();
 
                     }
-                    resolve({ "status": true, "store": store, "desc": desc, "title": title,'site_url':response.request.res.responseUrl });
+                    resolve({ "status": true, "store": store, "desc": desc, "title": title, 'site_url': response.request.res.responseUrl });
                 } else {
                     var new_url = response.request.res.responseUrl.replace(response.request.path, "");
                     ScrapClient.get(new_url)
@@ -196,12 +196,31 @@ function checkWebsite(url, client, store) {
                                 title = $('head > title').text();
 
                             }
-                            resolve({ "status": true, "store": store, "desc": desc, "title": title,'site_url':response.request.res.responseUrl });
-                        })
+                            resolve({ "status": true, "store": store, "desc": desc, "title": title, 'site_url': response.request.res.responseUrl });
+                        }).catch((error) => {
+                            //  console.log(error)
+                            var desc = "";
+                            var title = "";
+                            if (error.data) {
+                                if (JSON.stringify(JSON.stringify(error.data)).includes("Sorry, this store is currently unavailable.") || JSON.stringify(JSON.stringify(error.data)).includes("This store does not exist.")) {
+                                    //  console.log(store)
+                                    resolve({ "status": false, "url": store });
+                                    return false;
+                                }
+                                const $ = cheerio.load(error.data);
+
+                                desc = $("meta[name='description']").attr("content");
+                                title = $('head > title').text();
+                                resolve({ "status": true, "store": store, "desc": desc, "title": title });
+                                return false;
+                            }
+                            resolve({ "status": false });
+
+                        });
                 }
             })
             .catch((error) => {
-              //  console.log(error)
+                //  console.log(error)
                 var desc = "";
                 var title = "";
                 if (error.data) {
